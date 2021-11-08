@@ -25,7 +25,7 @@ library(tidyverse)
 t <- c(0:28)
 
 #Favorable trajectory
-y1 <- round(sin(t/7)*4+4)
+y1 <- round(sin((t+runif(1,-0.5,0.5))/7)*4+4)
 plot(t,y1)
 
 #Unfavorable trajectory
@@ -34,22 +34,23 @@ plot(t,y2)
 
 #Simulate 100 patients for each trajectory
 d1 <- data.frame()
-for (i in 1:100) { 
-  tmp <- round(sin(t/7)*4+4) + runif(1,-1,1)
+n <- 25
+for (i in 1:n) { 
+  tmp <- round(sin((t+runif(1,-4,4))/7)*4+4) + runif(1,-1.5,1.5)
   d1 <- rbind(d1, tmp)
  }
 colnames(d1) <- c(0:28)
 d1$traj <- "traj1"
-d1$pt <- c(0:99)
+d1$pt <- c(0:(n-1))
 
 d2 <-  data.frame()
-for (i in 1:100) { 
-  tmp <- round(sin(t/15)*4+3)+ runif(1,-1,1)
+for (i in 1:n) { 
+  tmp <- round(sin((t+runif(1,-4,4))/15)*4+3)+ runif(1,-1.5,1.5)
   d2 <- rbind(d2, tmp)
 }
 colnames(d2) <- c(0:28)
 d2$traj <- "traj2"
-d2$pt <- c(100:199)
+d2$pt <- c(n:(n*2-1))
 d <- bind_rows(d1,d2)
 ```
 
@@ -111,4 +112,3 @@ d %>%
   theme_bw() +
   geom_smooth(aes(group=traj),method = lm, formula = y ~ splines::ns(x, 3))
 ```
-
