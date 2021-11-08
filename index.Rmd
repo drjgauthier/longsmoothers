@@ -1,0 +1,114 @@
+---
+title: "Longitudinal smoothers in R"
+description: |
+  How to use smoothing functions in R with {ggplot}
+author:
+  - name: Jordan Gauthier 
+    url: https://github.com/drjgauthier
+    affiliation: Fred Hutch/University of Washington
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    code_folding: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Simulate data with ordinal scale over time
+
+```{r }
+library(tidyverse)
+#Time points
+t <- c(0:28)
+
+#Favorable trajectory
+y1 <- round(sin(t/7)*4+4)
+plot(t,y1)
+
+#Unfavorable trajectory
+y2 <- round(sin(t/15)*4+3)
+plot(t,y2)
+
+#Simulate 100 patients for each trajectory
+d1 <- data.frame()
+for (i in 1:100) { 
+  tmp <- round(sin(t/7)*4+4) + runif(1,-1,1)
+  d1 <- rbind(d1, tmp)
+ }
+colnames(d1) <- c(0:28)
+d1$traj <- "traj1"
+d1$pt <- c(0:99)
+
+d2 <-  data.frame()
+for (i in 1:100) { 
+  tmp <- round(sin(t/15)*4+3)+ runif(1,-1,1)
+  d2 <- rbind(d2, tmp)
+}
+colnames(d2) <- c(0:28)
+d2$traj <- "traj2"
+d2$pt <- c(100:199)
+d <- bind_rows(d1,d2)
+```
+
+## Plot patient trajectories
+
+```{r}
+d %>%
+  pivot_longer(cols = c(`0`:`28`),
+               names_to = "tp",
+               values_to = "grade") %>%
+  ggplot(aes(x = as.numeric(tp), y = grade, group = as.character(pt),col=traj)) +
+  geom_line(alpha=0.2) +
+  scale_x_continuous(breaks = c(0:28))+
+  scale_y_continuous(breaks = c(0:10))+
+  theme_bw()
+```
+
+## Plot patient trajectories - LOESS Smoother
+
+```{r}
+d %>%
+  pivot_longer(cols = c(`0`:`28`),
+               names_to = "tp",
+               values_to = "grade") %>%
+  ggplot(aes(x = as.numeric(tp), y = grade, group = as.character(pt),col=traj)) +
+  geom_line(alpha=0.2) +
+  scale_x_continuous(breaks = c(0:28))+
+  scale_y_continuous(breaks = c(0:10))+
+  theme_bw() +
+  geom_smooth(aes(group=traj),method = "loess",se=T)
+```
+
+## Plot patient trajectories - B-spline
+
+```{r}
+d %>%
+  pivot_longer(cols = c(`0`:`28`),
+               names_to = "tp",
+               values_to = "grade") %>%
+  ggplot(aes(x = as.numeric(tp), y = grade, group = as.character(pt),col=traj)) +
+  geom_line(alpha=0.2) +
+  scale_x_continuous(breaks = c(0:28))+
+  scale_y_continuous(breaks = c(0:10))+
+  theme_bw() +
+  geom_smooth(aes(group=traj),method = lm, formula = y ~ splines::bs(x, 3))
+```
+
+## Plot patient trajectories - natural spline
+
+```{r}
+d %>%
+  pivot_longer(cols = c(`0`:`28`),
+               names_to = "tp",
+               values_to = "grade") %>%
+  ggplot(aes(x = as.numeric(tp), y = grade, group = as.character(pt),col=traj)) +
+  geom_line(alpha=0.2) +
+  scale_x_continuous(breaks = c(0:28))+
+  scale_y_continuous(breaks = c(0:10))+
+  theme_bw() +
+  geom_smooth(aes(group=traj),method = lm, formula = y ~ splines::ns(x, 3))
+```
+
